@@ -1,52 +1,31 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Animations;
 using UnityEngine.AI;
-
-// source: https://www.youtube.com/watch?v=UjkSFoLxesw
-
-// note: if this project were more fleshed out, i would redo this into a class
-// hierarchy system so that different enemy AI's could inherit basic components,
-// however there's only one type of enemy so its no big deal lol
 
 public class EnemyAI : MonoBehaviour
 {
-    // pathfinding component for the enemy
-    public NavMeshAgent agent;
-
-    // 3D location of the player
-    public Transform player;
-
-    public LayerMask whatIsGround, whatIsPlayer;
-
-    // patrolling
-    public Vector3 walkPoint;
+	public Vector3 walkPoint;
     bool walkPointSet;
-    public float walkPointRange;
-    [SerializeField] float giveUpTime = 8.0f;
-    float patrolTime;
-
-    // attacking (currently unused)
-    public float timeBetweenAttacks;
-    bool alreadyAttacked;
+    public float walkPointRange = 8.0f;
+    public NavMeshAgent agent;
+    public Transform player;
+    public Animator animator;
+    public LayerMask whatIsGround, whatIsPlayer;
 
     // states
     public float sightRange, attackRange;
     private bool playerInSightRange, playerInAttackRange;
 
-    public Animator animator;
-
     private void Awake()
     {
-        // find the location of the player at load
-        player = GameObject.Find("Player").transform;
-
+        player = GameObject.FindWithTag("Player").transform;
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
     }
 
-    private void Update()
+    // Update is called once per frame
+    void Update()
     {
         // check a sphere around the enemy for  the player
         playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
@@ -55,26 +34,16 @@ public class EnemyAI : MonoBehaviour
         if (!playerInSightRange && !playerInAttackRange) Patrolling();
         if (playerInSightRange && !playerInAttackRange) ChasePlayer();
 
-        animator.SetBool("moving", agent.isStopped);
+        //animator.SetBool("moving", agent.isStopped);
         //if (playerInSightRange && playerInAttackRange) AttackPLayer();
     }
 
     private void Patrolling()
-    {  
+    {
+        agent.speed = 1.5f;
         // if no walk point is set, calls function to generate a new one
         if (!walkPointSet) SearchWalkPoint();
-
-        // if enemy hasnt made it to the point in time, find new point
-        if (Time.time > patrolTime + giveUpTime)
-        {
-            //Debug.Log("i give up");
-            GetComponent<Rigidbody>().velocity = Vector3.zero;
-            SearchWalkPoint();
-        }
-
-            // set destination of the enemy to the current walk point
-            if (walkPointSet) 
-            agent.SetDestination(walkPoint);
+        if (walkPointSet) agent.SetDestination(walkPoint);
 
         // calculate the distance to the target walk point
         Vector3 distanceToWalkPoint = transform.position - walkPoint;
@@ -87,37 +56,35 @@ public class EnemyAI : MonoBehaviour
     private void SearchWalkPoint()
     {
         Vector3 newPoint;
-
-        // reset patrolTime timer
-        patrolTime = Time.time;
-
-        // calculate random z and x points in range to walk to
-        float randomZ = Random.Range(-walkPointRange, walkPointRange);
-        float randomX = Random.Range(-walkPointRange, walkPointRange);
-
-        // set the walk point to this new generated point
-        // takes enemy's current position and adds the new points to find a target location
-        newPoint = new Vector3(transform.position.x + randomX, transform.position.y, transform.position.z + randomZ);
-
-        // very cool resource: https://gamedev.stackexchange.com/questions/147915/what-does-navmesh-allareas-specify-in-unity
-        //check if the new point is within the bounds of the navmesh
-        if (NavMesh.SamplePosition(newPoint, out _, 1.0f, 1))
+        if (RandomPoint(transform.position, walkPointRange, out newPoint))
         {
+            walkPointSet = true;
             walkPoint = newPoint;
+            Debug.DrawRay(newPoint, Vector3.up, Color.blue, 1.0f);
         }
 
-
-        // check that the new walk point is actually on the ground
-        if (Physics.Raycast(walkPoint, -transform.up, 2f, whatIsGround)) walkPointSet = true;
-        //Debug.Log("Current enemy walkpoint: " + walkPoint);
     }
 
-    private void ChasePlayer()
-    {  
-        // set the enemy to head towards the player's current position
-        agent.SetDestination(player.position);
-        //Debug.Log("chasing player!!!!");
+    public float range = 10.0f;
+	bool RandomPoint(Vector3 center, float range, out Vector3 result)
+	{
+		for (int i = 0; i < 30; i++)
+		{
+			Vector3 randomPoint = center + Random.insideUnitSphere * range;
+			NavMeshHit hit;
+			if (NavMesh.SamplePosition(randomPoint, out hit, 1.0f, NavMesh.AllAreas))
+			{
+				result = hit.position;
+				return true;
+			}
+		}
+		result = Vector3.zero;
+		return false;
+	}
 
+    void ChasePlayer()
+    {
+        agent.speed = 2.0f;
+        agent.SetDestination(player.position);
     }
 }
-

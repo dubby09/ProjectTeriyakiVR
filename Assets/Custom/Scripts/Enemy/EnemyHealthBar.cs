@@ -17,6 +17,14 @@ public class EnemyHealthBar : MonoBehaviour
         slider.value = currentValue / maxValue;
     }
 
+    private void Awake()
+    {
+        if (playerCamera == null)
+        {
+            playerCamera = Camera.main;
+        }
+    }
+
 
     // Update is called once per frame
     void Update()

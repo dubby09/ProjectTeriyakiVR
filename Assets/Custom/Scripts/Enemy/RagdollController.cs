@@ -1,13 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
-public class EnemyState : MonoBehaviour
+public class RagdollController : MonoBehaviour
 {
     CapsuleCollider mainCollider;
     public GameObject rig;
     Animator animator;
     bool _ragdollState;
+    EnemyAI enemyAI;
+    NavMeshAgent agent;
 
     // Start is called before the first frame update
     void Start()
@@ -15,6 +18,7 @@ public class EnemyState : MonoBehaviour
         GetRagdollComponents();
         mainCollider = GetComponent<CapsuleCollider>();
         animator = GetComponent<Animator>();
+        agent = GetComponent<NavMeshAgent>();
         DisableRagdollMode();
     }
 
@@ -23,7 +27,10 @@ public class EnemyState : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (_ragdollState == true && ragdollRBs[0].IsSleeping())
+        {
+            enemyAI.RagdollStill = true;
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -41,12 +48,15 @@ public class EnemyState : MonoBehaviour
     {
         ragdollColliders = rig.GetComponentsInChildren<Collider>();
         ragdollRBs = rig.GetComponentsInChildren<Rigidbody>();
+        Debug.Log(ragdollRBs);
     }
 
     void EnableRagdollMode()
     {
+        //enemyAI.CurrentState = "Ragdoll";
         _ragdollState = true;
         animator.enabled = false;
+        agent.enabled = false;
 
         foreach (Collider collider in ragdollColliders)
         {
@@ -66,6 +76,7 @@ public class EnemyState : MonoBehaviour
     {
         _ragdollState = false;
         animator.enabled = true;
+        agent.enabled = true;
 
         foreach(Collider collider in ragdollColliders)
         {

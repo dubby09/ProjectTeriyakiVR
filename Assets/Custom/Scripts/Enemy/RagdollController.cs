@@ -19,6 +19,7 @@ public class RagdollController : MonoBehaviour
         mainCollider = GetComponent<CapsuleCollider>();
         animator = GetComponent<Animator>();
         agent = GetComponent<NavMeshAgent>();
+        enemyAI = GetComponent<EnemyAI>();
         DisableRagdollMode();
     }
 
@@ -31,6 +32,10 @@ public class RagdollController : MonoBehaviour
         {
             enemyAI.RagdollStill = true;
         }
+        else
+        {
+            enemyAI.RagdollStill = false;
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -38,6 +43,7 @@ public class RagdollController : MonoBehaviour
         if (collision.gameObject.CompareTag("MeleeWeapon"))
         {
             EnableRagdollMode();
+            enemyAI.CurrentState = EnemyStates.Ragdoll;
         }
     }
 
@@ -48,12 +54,11 @@ public class RagdollController : MonoBehaviour
     {
         ragdollColliders = rig.GetComponentsInChildren<Collider>();
         ragdollRBs = rig.GetComponentsInChildren<Rigidbody>();
-        Debug.Log(ragdollRBs);
     }
 
     void EnableRagdollMode()
     {
-        //enemyAI.CurrentState = "Ragdoll";
+        enemyAI.HasRecovered = false;
         _ragdollState = true;
         animator.enabled = false;
         agent.enabled = false;
@@ -66,13 +71,14 @@ public class RagdollController : MonoBehaviour
         foreach (Rigidbody rb in ragdollRBs)
         {
             rb.isKinematic = false;
+            rb.WakeUp();
         }
 
         mainCollider.enabled = false;
         GetComponent<Rigidbody>().isKinematic = true;
     }
 
-    void DisableRagdollMode()
+    public void DisableRagdollMode()
     {
         _ragdollState = false;
         animator.enabled = true;

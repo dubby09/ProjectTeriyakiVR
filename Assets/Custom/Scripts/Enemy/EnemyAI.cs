@@ -3,6 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+
+public enum EnemyStates
+{
+    Patrolling,
+    Idle,
+    Ragdoll,
+    Recover,
+    Chasing,
+    Attacking
+}
+
 public class EnemyAI : MonoBehaviour
 {
     public float walkPointRange = 8.0f;
@@ -15,6 +26,7 @@ public class EnemyAI : MonoBehaviour
     public LayerMask whatIsGround, whatIsPlayer;
     public float sightRange, attackRange;
     private bool playerInSightRange, playerInAttackRange;
+    bool recoverFinished = false;
     RagdollController ragdollController;
 
     // animation hashes
@@ -22,9 +34,10 @@ public class EnemyAI : MonoBehaviour
     int isIdleHash = Animator.StringToHash("isIdle");
     int isChasingHash = Animator.StringToHash("isChasing");
     int isAttackingHash = Animator.StringToHash("isAttacking");
+    int isRecoveringHash = Animator.StringToHash("isRecovering");
 
     // state variables
-    string currentState = "PatrolState";
+    EnemyStates currentState = EnemyStates.Patrolling;
     public Vector3 walkPoint;
     bool walkPointSet;
     float idleEndTime;
@@ -32,9 +45,10 @@ public class EnemyAI : MonoBehaviour
     bool hasRecovered = true;
     bool ragdollStill = false;
 
-    public string CurrentState { set { currentState = value; } }
+    public EnemyStates CurrentState { set { currentState = value; } }
     public float RagdollEndTime { set { ragdollEndTime = value; } }
     public bool RagdollStill { set { ragdollStill = value; } }
+    public bool HasRecovered { set { hasRecovered = value; } }
 
     private void Awake()
     {
@@ -48,85 +62,115 @@ public class EnemyAI : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        HandleAnimation();
         CheckSwitchState();
-        CheckForPlayer();
-        UpdateCurrentState(currentState);
+        UpdateCurrentState();
+        Debug.Log(currentState);
     }
 
     // ====== state methods ======
-    void UpdateCurrentState(string state)
+    void UpdateCurrentState()
     {
-        switch (state)
+        switch (currentState)
         {
-            case "PatrolCycle":
-                PatrolCycle();
+            case EnemyStates.Patrolling:
+                Patrol();
                 break;
-            case "ChasePlayer":
+            case EnemyStates.Idle:
+                break;
+            case EnemyStates.Chasing:
                 ChasePlayer();
                 break;
-            case "AttackPlayer":
+            case EnemyStates.Attacking:
                 AttackPlayer();
                 break;
-            case "Ragdoll":
-                Ragdoll();
+            case EnemyStates.Ragdoll:
+                //Ragdoll();
                 break;
-            case "Recover":
+            case EnemyStates.Recover:
                 Recover();
-                break;
-            default:
                 break;
         }
     }
 
     void CheckSwitchState()
     {
-        if (ragdollController.RagdollState == false)
+        switch (currentState)
         {
-            if (!playerInSightRange && !playerInAttackRange) PatrolCycle();
-            else if (playerInSightRange && !playerInAttackRange) ChasePlayer();
-            else if (playerInSightRange && playerInAttackRange) AttackPlayer();
-        }
-        else
-        {
-            Ragdoll();
+            case EnemyStates.Patrolling:
+                CheckForPlayer();
+                if (playerInSightRange
+                    && !playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Chasing;
+                else if (playerInSightRange
+                    && playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Attacking;
+                else if (idleEndTime >= Time.time
+                    && hasRecovered) currentState = EnemyStates.Idle;
+                break;
+
+            case EnemyStates.Chasing:
+                CheckForPlayer();
+                if (!playerInSightRange
+                    && !playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Patrolling;
+                else if (playerInSightRange
+                    && playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Attacking;
+                break;
+
+            case EnemyStates.Attacking:
+                CheckForPlayer();
+                if (!playerInSightRange
+                    && !playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Patrolling;
+                else if (playerInSightRange
+                    && !playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Chasing;
+                break;
+
+            case EnemyStates.Idle:
+                CheckForPlayer();
+                if (playerInSightRange
+                    && !playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Chasing;
+                else if (playerInSightRange
+                    && playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Attacking;
+                else if (idleEndTime <= Time.time
+                    && hasRecovered) currentState = EnemyStates.Patrolling;
+                break;
+
+            case EnemyStates.Ragdoll:
+                if (ragdollStill) currentState = EnemyStates.Recover;
+                break;
+
+            case EnemyStates.Recover:
+                if (hasRecovered) currentState = EnemyStates.Idle;
+                break;
         }
     }
 
-    void PatrolCycle()
+    void Patrol()
     {
-        animator.SetBool(isChasingHash, false);
-        animator.SetBool(isAttackingHash, false);
         agent.speed = patrolSpeed;
-        if (Time.time >= idleEndTime)
-        {
-            // if no walk point is set, calls function to generate a new one
-            if (!walkPointSet) SearchWalkPoint();
-            if (walkPointSet)
-            {
-                agent.SetDestination(walkPoint);
-                animator.SetBool(isPatrollingHash, true); 
-                animator.SetBool(isIdleHash, false);
-            }
-            // calculate the distance to the target walk point
-            Vector3 distanceToWalkPoint = transform.position - walkPoint;
+        // if no walk point is set, calls function to generate a new one
+        if (!walkPointSet) SearchWalkPoint();
+        if (walkPointSet) agent.SetDestination(walkPoint);
 
-            // use calculated distance to check when the enemy reaches the walk point, and reset the walk point
-            if (distanceToWalkPoint.magnitude < 1f)
-            {
-                walkPointSet = false;
-                animator.SetBool(isIdleHash, true);
-                animator.SetBool(isPatrollingHash, false);
-                idleEndTime = Time.time + idleTime;
-            }
+        // calculate the distance to the target walk point
+        Vector3 distanceToWalkPoint = transform.position - walkPoint;
+
+        // use calculated distance to check when the enemy reaches the walk point, and reset the walk point
+        if (distanceToWalkPoint.magnitude < 1f)
+        {
+            walkPointSet = false;
+            idleEndTime = Time.time + idleTime;
         }
     }
 
     void ChasePlayer()
     {
-        animator.SetBool(isPatrollingHash, false);
-        animator.SetBool(isIdleHash, false);
-        animator.SetBool(isAttackingHash, false);
-        animator.SetBool(isChasingHash, true);
         walkPointSet = false;
         agent.speed = chaseSpeed;
         agent.SetDestination(player.position);
@@ -137,24 +181,56 @@ public class EnemyAI : MonoBehaviour
 
     }
 
-    void Ragdoll()
-    {
-        if (Time.time >= ragdollEndTime && ragdollStill)
-        {
-            // TODO: transition out of ragdoll with an animation before coninuing normal function
-            //currentState = "Recover";
-        }
-    }
-
     void Recover()
     {
-
+        ragdollController.DisableRagdollMode();
     }
 
     void CheckForPlayer()
     {
         playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
         playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
+    }
+
+    void HandleAnimation()
+    {
+        switch (currentState)
+        {
+            case EnemyStates.Patrolling:
+                animator.SetBool(isPatrollingHash, true);
+                animator.SetBool(isIdleHash, false);
+                animator.SetBool(isChasingHash, false);
+                animator.SetBool(isAttackingHash, false);
+                animator.SetBool(isRecoveringHash, false);
+                break;
+            case EnemyStates.Idle:
+                animator.SetBool(isPatrollingHash, false);
+                animator.SetBool(isIdleHash, true);
+                animator.SetBool(isChasingHash, false);
+                animator.SetBool(isAttackingHash, false);
+                animator.SetBool(isRecoveringHash, false);
+                break;
+            case EnemyStates.Chasing:
+                animator.SetBool(isPatrollingHash, false);
+                animator.SetBool(isIdleHash, false);
+                animator.SetBool(isChasingHash, true);
+                animator.SetBool(isAttackingHash, false);
+                break;
+            case EnemyStates.Attacking:
+                animator.SetBool(isPatrollingHash, false);
+                animator.SetBool(isIdleHash, false);
+                animator.SetBool(isChasingHash, false);
+                animator.SetBool(isAttackingHash, true);
+                break;
+            case EnemyStates.Recover:
+                animator.SetBool(isPatrollingHash, false);
+                animator.SetBool(isIdleHash, false);
+                animator.SetBool(isChasingHash, false);
+                animator.SetBool(isAttackingHash, false);
+                animator.SetBool(isRecoveringHash, true);
+                break;
+        }
+
     }
 
     private void SearchWalkPoint()
@@ -182,5 +258,10 @@ public class EnemyAI : MonoBehaviour
 		}
 		result = Vector3.zero;
 		return false;
+    }
+
+    void FinishedRecoverAnimation()
+    {
+        hasRecovered = true;
     }
 }

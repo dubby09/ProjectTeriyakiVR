@@ -45,6 +45,11 @@ public class RagdollController : MonoBehaviour
             EnableRagdollMode();
             enemyAI.CurrentState = EnemyStates.Ragdoll;
         }
+        if (collision.gameObject.CompareTag("RangedProjectile"))
+        {
+            EnableRagdollMode();
+            enemyAI.CurrentState = EnemyStates.Ragdoll;
+        }
     }
 
     Collider[] ragdollColliders;

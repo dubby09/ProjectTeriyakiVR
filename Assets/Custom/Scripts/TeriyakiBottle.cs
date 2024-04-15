@@ -11,6 +11,11 @@ public class TeriyakiBottle : MonoBehaviour
 
     public ParticleSystem particles;
 
+    public GameObject projectile;
+    public Transform spawnPoint;
+
+    public float projectileForce = 50f;
+
     private void Awake()
     {
         devicesWithPrimaryButton = new List<InputDevice>();
@@ -65,11 +70,19 @@ public class TeriyakiBottle : MonoBehaviour
             FireBottle();
             lastButtonState = tempState;
         }
+
+        if(Input.GetButtonDown("Fire1"))
+        {
+            FireBottle();
+        }
     }
 
     public void FireBottle()
     {
         Debug.Log("Particles");
         particles.Play();
+        Rigidbody p = Instantiate(projectile, spawnPoint.position, transform.rotation).GetComponent<Rigidbody>();
+        p.AddForce(transform.forward * projectileForce);
+
     }
 }

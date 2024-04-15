@@ -19,14 +19,13 @@ public class EnemyAI : MonoBehaviour
     public float walkPointRange = 8.0f;
     public float patrolSpeed = 1.3f;
     public float chaseSpeed = 2.0f;
-    public float idleTime = 3.0f;
+    public float maxWaitTime = 3.0f;
     public NavMeshAgent agent;
     public Transform player;
     public Animator animator;
     public LayerMask whatIsGround, whatIsPlayer;
     public float sightRange, attackRange;
     private bool playerInSightRange, playerInAttackRange;
-    bool recoverFinished = false;
     RagdollController ragdollController;
 
     // animation hashes
@@ -41,12 +40,10 @@ public class EnemyAI : MonoBehaviour
     public Vector3 walkPoint;
     bool walkPointSet;
     float idleEndTime;
-    float ragdollEndTime;
     bool hasRecovered = true;
     bool ragdollStill = false;
 
     public EnemyStates CurrentState { set { currentState = value; } }
-    public float RagdollEndTime { set { ragdollEndTime = value; } }
     public bool RagdollStill { set { ragdollStill = value; } }
     public bool HasRecovered { set { hasRecovered = value; } }
 
@@ -65,7 +62,7 @@ public class EnemyAI : MonoBehaviour
         HandleAnimation();
         CheckSwitchState();
         UpdateCurrentState();
-        Debug.Log(currentState);
+        //Debug.Log(currentState);
     }
 
     // ====== state methods ======
@@ -77,6 +74,7 @@ public class EnemyAI : MonoBehaviour
                 Patrol();
                 break;
             case EnemyStates.Idle:
+                Idle();
                 break;
             case EnemyStates.Chasing:
                 ChasePlayer();
@@ -113,10 +111,10 @@ public class EnemyAI : MonoBehaviour
                 CheckForPlayer();
                 if (!playerInSightRange
                     && !playerInAttackRange
-                    && hasRecovered) currentState = EnemyStates.Patrolling;
+                    && hasRecovered) currentState = EnemyStates.Idle;
                 else if (playerInSightRange
                     && playerInAttackRange
-                    && hasRecovered) currentState = EnemyStates.Attacking;
+                    && hasRecovered) currentState = EnemyStates.Attacking; 
                 break;
 
             case EnemyStates.Attacking:
@@ -142,8 +140,12 @@ public class EnemyAI : MonoBehaviour
                 break;
 
             case EnemyStates.Ragdoll:
-                if (ragdollStill) currentState = EnemyStates.Recover;
-                break;
+                if (ragdollStill)
+                {
+                    currentState = EnemyStates.Recover;
+                    transform.position = ragdollController.GetPositionOfRagdoll().position;
+                }
+                    break;
 
             case EnemyStates.Recover:
                 if (hasRecovered) currentState = EnemyStates.Idle;
@@ -165,8 +167,13 @@ public class EnemyAI : MonoBehaviour
         if (distanceToWalkPoint.magnitude < 1f)
         {
             walkPointSet = false;
-            idleEndTime = Time.time + idleTime;
+            idleEndTime = Time.time + Random.Range(0, maxWaitTime);
         }
+    }
+
+    void Idle()
+    {
+        agent.SetDestination(transform.position);
     }
 
     void ChasePlayer()
@@ -183,6 +190,7 @@ public class EnemyAI : MonoBehaviour
 
     void Recover()
     {
+        animator.SetBool(isRecoveringHash, true);
         ragdollController.DisableRagdollMode();
     }
 

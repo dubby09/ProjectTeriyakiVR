@@ -40,12 +40,8 @@ public class RagdollController : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("MeleeWeapon"))
-        {
-            EnableRagdollMode();
-            enemyAI.CurrentState = EnemyStates.Ragdoll;
-        }
-        if (collision.gameObject.CompareTag("RangedProjectile"))
+        if (collision.gameObject.CompareTag("MeleeWeapon")
+            || collision.gameObject.CompareTag("RangedProjectile"))
         {
             EnableRagdollMode();
             enemyAI.CurrentState = EnemyStates.Ragdoll;
@@ -101,5 +97,10 @@ public class RagdollController : MonoBehaviour
 
         mainCollider.enabled = true;
         GetComponent<Rigidbody>().isKinematic = false;
+    }
+
+    public Transform GetPositionOfRagdoll()
+    {
+        return ragdollRBs[1].transform;
     }
 }

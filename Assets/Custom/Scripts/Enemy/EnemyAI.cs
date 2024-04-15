@@ -1,123 +1,267 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Animations;
 using UnityEngine.AI;
 
-// source: https://www.youtube.com/watch?v=UjkSFoLxesw
 
-// note: if this project were more fleshed out, i would redo this into a class
-// hierarchy system so that different enemy AI's could inherit basic components,
-// however there's only one type of enemy so its no big deal lol
+public enum EnemyStates
+{
+    Patrolling,
+    Idle,
+    Ragdoll,
+    Recover,
+    Chasing,
+    Attacking
+}
 
 public class EnemyAI : MonoBehaviour
 {
-    // pathfinding component for the enemy
+    public float walkPointRange = 8.0f;
+    public float patrolSpeed = 1.3f;
+    public float chaseSpeed = 2.0f;
+    public float idleTime = 3.0f;
     public NavMeshAgent agent;
-
-    // 3D location of the player
     public Transform player;
-
+    public Animator animator;
     public LayerMask whatIsGround, whatIsPlayer;
-
-    // patrolling
-    public Vector3 walkPoint;
-    bool walkPointSet;
-    public float walkPointRange;
-    [SerializeField] float giveUpTime = 8.0f;
-    float patrolTime;
-
-    // attacking (currently unused)
-    public float timeBetweenAttacks;
-    bool alreadyAttacked;
-
-    // states
     public float sightRange, attackRange;
     private bool playerInSightRange, playerInAttackRange;
+    bool recoverFinished = false;
+    RagdollController ragdollController;
 
-    public Animator animator;
+    // animation hashes
+    int isPatrollingHash = Animator.StringToHash("isPatrolling");
+    int isIdleHash = Animator.StringToHash("isIdle");
+    int isChasingHash = Animator.StringToHash("isChasing");
+    int isAttackingHash = Animator.StringToHash("isAttacking");
+    int isRecoveringHash = Animator.StringToHash("isRecovering");
+
+    // state variables
+    EnemyStates currentState = EnemyStates.Patrolling;
+    public Vector3 walkPoint;
+    bool walkPointSet;
+    float idleEndTime;
+    float ragdollEndTime;
+    bool hasRecovered = true;
+    bool ragdollStill = false;
+
+    public EnemyStates CurrentState { set { currentState = value; } }
+    public float RagdollEndTime { set { ragdollEndTime = value; } }
+    public bool RagdollStill { set { ragdollStill = value; } }
+    public bool HasRecovered { set { hasRecovered = value; } }
 
     private void Awake()
     {
-        // find the location of the player at load
-        player = GameObject.Find("Player").transform;
-
+        player = GameObject.FindWithTag("Player").transform;
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
+        ragdollController = GetComponent<RagdollController>();
+        idleEndTime = Time.time;
     }
 
-    private void Update()
+    // Update is called once per frame
+    void Update()
     {
-        // check a sphere around the enemy for  the player
-        playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
-        playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
-
-        if (!playerInSightRange && !playerInAttackRange) Patrolling();
-        if (playerInSightRange && !playerInAttackRange) ChasePlayer();
-
-        animator.SetBool("moving", agent.isStopped);
-        //if (playerInSightRange && playerInAttackRange) AttackPLayer();
+        HandleAnimation();
+        CheckSwitchState();
+        UpdateCurrentState();
+        Debug.Log(currentState);
     }
 
-    private void Patrolling()
-    {  
+    // ====== state methods ======
+    void UpdateCurrentState()
+    {
+        switch (currentState)
+        {
+            case EnemyStates.Patrolling:
+                Patrol();
+                break;
+            case EnemyStates.Idle:
+                break;
+            case EnemyStates.Chasing:
+                ChasePlayer();
+                break;
+            case EnemyStates.Attacking:
+                AttackPlayer();
+                break;
+            case EnemyStates.Ragdoll:
+                //Ragdoll();
+                break;
+            case EnemyStates.Recover:
+                Recover();
+                break;
+        }
+    }
+
+    void CheckSwitchState()
+    {
+        switch (currentState)
+        {
+            case EnemyStates.Patrolling:
+                CheckForPlayer();
+                if (playerInSightRange
+                    && !playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Chasing;
+                else if (playerInSightRange
+                    && playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Attacking;
+                else if (idleEndTime >= Time.time
+                    && hasRecovered) currentState = EnemyStates.Idle;
+                break;
+
+            case EnemyStates.Chasing:
+                CheckForPlayer();
+                if (!playerInSightRange
+                    && !playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Patrolling;
+                else if (playerInSightRange
+                    && playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Attacking;
+                break;
+
+            case EnemyStates.Attacking:
+                CheckForPlayer();
+                if (!playerInSightRange
+                    && !playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Patrolling;
+                else if (playerInSightRange
+                    && !playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Chasing;
+                break;
+
+            case EnemyStates.Idle:
+                CheckForPlayer();
+                if (playerInSightRange
+                    && !playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Chasing;
+                else if (playerInSightRange
+                    && playerInAttackRange
+                    && hasRecovered) currentState = EnemyStates.Attacking;
+                else if (idleEndTime <= Time.time
+                    && hasRecovered) currentState = EnemyStates.Patrolling;
+                break;
+
+            case EnemyStates.Ragdoll:
+                if (ragdollStill) currentState = EnemyStates.Recover;
+                break;
+
+            case EnemyStates.Recover:
+                if (hasRecovered) currentState = EnemyStates.Idle;
+                break;
+        }
+    }
+
+    void Patrol()
+    {
+        agent.speed = patrolSpeed;
         // if no walk point is set, calls function to generate a new one
         if (!walkPointSet) SearchWalkPoint();
-
-        // if enemy hasnt made it to the point in time, find new point
-        if (Time.time > patrolTime + giveUpTime)
-        {
-            //Debug.Log("i give up");
-            GetComponent<Rigidbody>().velocity = Vector3.zero;
-            SearchWalkPoint();
-        }
-
-            // set destination of the enemy to the current walk point
-            if (walkPointSet) 
-            agent.SetDestination(walkPoint);
+        if (walkPointSet) agent.SetDestination(walkPoint);
 
         // calculate the distance to the target walk point
         Vector3 distanceToWalkPoint = transform.position - walkPoint;
 
         // use calculated distance to check when the enemy reaches the walk point, and reset the walk point
         if (distanceToWalkPoint.magnitude < 1f)
+        {
             walkPointSet = false;
+            idleEndTime = Time.time + idleTime;
+        }
+    }
+
+    void ChasePlayer()
+    {
+        walkPointSet = false;
+        agent.speed = chaseSpeed;
+        agent.SetDestination(player.position);
+    }
+
+    void AttackPlayer()
+    {
+
+    }
+
+    void Recover()
+    {
+        ragdollController.DisableRagdollMode();
+    }
+
+    void CheckForPlayer()
+    {
+        playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
+        playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
+    }
+
+    void HandleAnimation()
+    {
+        switch (currentState)
+        {
+            case EnemyStates.Patrolling:
+                animator.SetBool(isPatrollingHash, true);
+                animator.SetBool(isIdleHash, false);
+                animator.SetBool(isChasingHash, false);
+                animator.SetBool(isAttackingHash, false);
+                animator.SetBool(isRecoveringHash, false);
+                break;
+            case EnemyStates.Idle:
+                animator.SetBool(isPatrollingHash, false);
+                animator.SetBool(isIdleHash, true);
+                animator.SetBool(isChasingHash, false);
+                animator.SetBool(isAttackingHash, false);
+                animator.SetBool(isRecoveringHash, false);
+                break;
+            case EnemyStates.Chasing:
+                animator.SetBool(isPatrollingHash, false);
+                animator.SetBool(isIdleHash, false);
+                animator.SetBool(isChasingHash, true);
+                animator.SetBool(isAttackingHash, false);
+                break;
+            case EnemyStates.Attacking:
+                animator.SetBool(isPatrollingHash, false);
+                animator.SetBool(isIdleHash, false);
+                animator.SetBool(isChasingHash, false);
+                animator.SetBool(isAttackingHash, true);
+                break;
+            case EnemyStates.Recover:
+                animator.SetBool(isPatrollingHash, false);
+                animator.SetBool(isIdleHash, false);
+                animator.SetBool(isChasingHash, false);
+                animator.SetBool(isAttackingHash, false);
+                animator.SetBool(isRecoveringHash, true);
+                break;
+        }
+
     }
 
     private void SearchWalkPoint()
     {
         Vector3 newPoint;
-
-        // reset patrolTime timer
-        patrolTime = Time.time;
-
-        // calculate random z and x points in range to walk to
-        float randomZ = Random.Range(-walkPointRange, walkPointRange);
-        float randomX = Random.Range(-walkPointRange, walkPointRange);
-
-        // set the walk point to this new generated point
-        // takes enemy's current position and adds the new points to find a target location
-        newPoint = new Vector3(transform.position.x + randomX, transform.position.y, transform.position.z + randomZ);
-
-        // very cool resource: https://gamedev.stackexchange.com/questions/147915/what-does-navmesh-allareas-specify-in-unity
-        //check if the new point is within the bounds of the navmesh
-        if (NavMesh.SamplePosition(newPoint, out _, 1.0f, 1))
+        if (RandomPoint(transform.position, walkPointRange, out newPoint))
         {
+            walkPointSet = true;
             walkPoint = newPoint;
+            Debug.DrawRay(newPoint, Vector3.up, Color.blue, 1.0f);
         }
 
-
-        // check that the new walk point is actually on the ground
-        if (Physics.Raycast(walkPoint, -transform.up, 2f, whatIsGround)) walkPointSet = true;
-        //Debug.Log("Current enemy walkpoint: " + walkPoint);
+    }
+	bool RandomPoint(Vector3 center, float range, out Vector3 result)
+	{
+		for (int i = 0; i < 30; i++)
+		{
+			Vector3 randomPoint = center + Random.insideUnitSphere * range;
+			NavMeshHit hit;
+			if (NavMesh.SamplePosition(randomPoint, out hit, 1.0f, NavMesh.AllAreas))
+			{
+				result = hit.position;
+				return true;
+			}
+		}
+		result = Vector3.zero;
+		return false;
     }
 
-    private void ChasePlayer()
-    {  
-        // set the enemy to head towards the player's current position
-        agent.SetDestination(player.position);
-        //Debug.Log("chasing player!!!!");
-
+    void FinishedRecoverAnimation()
+    {
+        hasRecovered = true;
     }
 }
-

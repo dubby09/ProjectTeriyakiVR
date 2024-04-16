@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class EnemiesLeft : MonoBehaviour
 {
-    int enemiesLeft;
+    int enemiesLeft = 4;
     Text text;
 
     private void Awake()
@@ -16,8 +16,8 @@ public class EnemiesLeft : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        GameObject[] enemyArray = GameObject.FindGameObjectsWithTag("enemy");
-        enemiesLeft = enemyArray.Length;
+        //GameObject[] enemyArray = GameObject.FindGameObjectsWithTag("enemy");
+        //enemiesLeft = enemyArray.Length;
 
         if (enemiesLeft == 0)
         {
@@ -27,5 +27,10 @@ public class EnemiesLeft : MonoBehaviour
         {
             text.text = "Enemies Left: " + enemiesLeft;
         }
+    }
+
+    public void DecreaseCount()
+    {
+        enemiesLeft--;
     }
 }

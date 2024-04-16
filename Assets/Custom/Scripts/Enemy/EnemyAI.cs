@@ -27,6 +27,7 @@ public class EnemyAI : MonoBehaviour
     public float sightRange, attackRange;
     private bool playerInSightRange, playerInAttackRange;
     RagdollController ragdollController;
+    SimpleEnemy simpleEnemy;
 
     // animation hashes
     int isPatrollingHash = Animator.StringToHash("isPatrolling");
@@ -54,6 +55,7 @@ public class EnemyAI : MonoBehaviour
         animator = GetComponent<Animator>();
         ragdollController = GetComponent<RagdollController>();
         idleEndTime = Time.time;
+        simpleEnemy = GetComponent<SimpleEnemy>();
     }
 
     // Update is called once per frame
@@ -190,8 +192,11 @@ public class EnemyAI : MonoBehaviour
 
     void Recover()
     {
-        animator.SetBool(isRecoveringHash, true);
-        ragdollController.DisableRagdollMode();
+        if (simpleEnemy.health > 0) // Only recover if has health left
+        {
+            animator.SetBool(isRecoveringHash, true);
+            ragdollController.DisableRagdollMode();
+        }
     }
 
     void CheckForPlayer()

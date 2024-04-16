@@ -14,10 +14,13 @@ public class TeriyakiBottle : MonoBehaviour
     public GameObject projectile;
     public Transform spawnPoint;
 
+    AudioSource audioSource;
+
     public float projectileForce = 50f;
 
     private void Awake()
     {
+        audioSource = GetComponent<AudioSource>();
         devicesWithPrimaryButton = new List<InputDevice>();
     }
 
@@ -80,6 +83,7 @@ public class TeriyakiBottle : MonoBehaviour
     public void FireBottle()
     {
         Debug.Log("Particles");
+        audioSource.Play();
         particles.Play();
         Rigidbody p = Instantiate(projectile, spawnPoint.position, transform.rotation).GetComponent<Rigidbody>();
         p.AddForce(transform.forward * projectileForce);

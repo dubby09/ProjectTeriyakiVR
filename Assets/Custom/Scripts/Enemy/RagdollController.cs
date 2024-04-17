@@ -47,7 +47,7 @@ public class RagdollController : MonoBehaviour
             || collision.gameObject.CompareTag("RangedProjectile"))
         {
             EnableRagdollMode();
-            simpleEnemy.health -= 10;
+            //simpleEnemy.health -= 10;
             enemyAI.CurrentState = EnemyStates.Ragdoll;
 
             if(simpleEnemy.health <= 0 && !isDead)
@@ -60,9 +60,9 @@ public class RagdollController : MonoBehaviour
         }
     }
 
-    Collider[] ragdollColliders;
+    public Collider[] ragdollColliders;
     Rigidbody[] ragdollRBs;
-
+     
     void GetRagdollComponents()
     {
         ragdollColliders = rig.GetComponentsInChildren<Collider>();
@@ -78,7 +78,7 @@ public class RagdollController : MonoBehaviour
 
         foreach (Collider collider in ragdollColliders)
         {
-            collider.enabled = true;
+            collider.isTrigger = false;
         }
 
         foreach (Rigidbody rb in ragdollRBs)
@@ -99,7 +99,7 @@ public class RagdollController : MonoBehaviour
 
         foreach(Collider collider in ragdollColliders)
         {
-            collider.enabled = false;
+            collider.isTrigger = true;
         }
 
         foreach(Rigidbody rb in ragdollRBs)

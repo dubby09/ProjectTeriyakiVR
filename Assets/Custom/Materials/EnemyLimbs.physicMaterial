@@ -7,8 +7,8 @@ PhysicMaterial:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: EnemyLimbs
-  dynamicFriction: 5.79
-  staticFriction: 5.48
+  dynamicFriction: 26.42
+  staticFriction: 62.16
   bounciness: 0.15
   frictionCombine: 0
   bounceCombine: 0

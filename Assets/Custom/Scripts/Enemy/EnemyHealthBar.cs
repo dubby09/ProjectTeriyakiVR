@@ -12,9 +12,9 @@ public class EnemyHealthBar : MonoBehaviour
     [SerializeField] private Image fillImage;
     //[SerializeField] private Transform target;
 
-    public void UpdateHealthBar(float currentValue, float maxValue)
+    public void UpdateHealthBar(SimpleEnemy enemy)
     {
-        slider.value = currentValue / maxValue;
+        slider.value = enemy.health / enemy.maxHealth;
     }
 
     private void Awake()
@@ -42,7 +42,10 @@ public class EnemyHealthBar : MonoBehaviour
 
         // roates the health bar in sync with the player camera so that it always appears
         // flat to the camera
-        transform.rotation = playerCamera.transform.rotation;
+        transform.rotation = Quaternion.Euler(0f, playerCamera.transform.rotation.eulerAngles.y, 0f);
+
+        // for non-VR 3rd person camera:
+        //transform.rotation = playerCamera.transform.rotation;
 
     }
 }

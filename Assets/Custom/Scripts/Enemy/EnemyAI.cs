@@ -20,6 +20,7 @@ public class EnemyAI : MonoBehaviour
     public float patrolSpeed = 1.3f;
     public float chaseSpeed = 2.0f;
     public float maxWaitTime = 3.0f;
+    public float maxRagdollTime = 5.0f;
     public NavMeshAgent agent;
     public Transform player;
     public Animator animator;
@@ -28,6 +29,8 @@ public class EnemyAI : MonoBehaviour
     private bool playerInSightRange, playerInAttackRange;
     RagdollController ragdollController;
     SimpleEnemy simpleEnemy;
+    Collider[] colliders;
+
 
     // animation hashes
     int isPatrollingHash = Animator.StringToHash("isPatrolling");
@@ -41,6 +44,7 @@ public class EnemyAI : MonoBehaviour
     public Vector3 walkPoint;
     bool walkPointSet;
     float idleEndTime;
+    public float ragdollEndTime;
     bool hasRecovered = true;
     bool ragdollStill = false;
 
@@ -56,6 +60,7 @@ public class EnemyAI : MonoBehaviour
         ragdollController = GetComponent<RagdollController>();
         idleEndTime = Time.time;
         simpleEnemy = GetComponent<SimpleEnemy>();
+        colliders = ragdollController.gameObject.GetComponent<RagdollController>().ragdollColliders;
     }
 
     // Update is called once per frame
@@ -85,7 +90,7 @@ public class EnemyAI : MonoBehaviour
                 AttackPlayer();
                 break;
             case EnemyStates.Ragdoll:
-                //Ragdoll();
+                Ragdoll();
                 break;
             case EnemyStates.Recover:
                 Recover();
@@ -116,7 +121,7 @@ public class EnemyAI : MonoBehaviour
                     && hasRecovered) currentState = EnemyStates.Idle;
                 else if (playerInSightRange
                     && playerInAttackRange
-                    && hasRecovered) currentState = EnemyStates.Attacking; 
+                    && hasRecovered) currentState = EnemyStates.Attacking;
                 break;
 
             case EnemyStates.Attacking:
@@ -147,7 +152,7 @@ public class EnemyAI : MonoBehaviour
                     currentState = EnemyStates.Recover;
                     transform.position = ragdollController.GetPositionOfRagdoll().position;
                 }
-                    break;
+                break;
 
             case EnemyStates.Recover:
                 if (hasRecovered) currentState = EnemyStates.Idle;
@@ -190,6 +195,15 @@ public class EnemyAI : MonoBehaviour
 
     }
 
+    void Ragdoll()
+    {
+        if (Time.time > ragdollEndTime)
+        {
+            currentState = EnemyStates.Recover;
+
+        }
+    }
+
     void Recover()
     {
         if (simpleEnemy.health > 0) // Only recover if has health left
@@ -217,30 +231,30 @@ public class EnemyAI : MonoBehaviour
                 animator.SetBool(isRecoveringHash, false);
                 break;
             case EnemyStates.Idle:
-                animator.SetBool(isPatrollingHash, false);
                 animator.SetBool(isIdleHash, true);
+                animator.SetBool(isPatrollingHash, false);
                 animator.SetBool(isChasingHash, false);
                 animator.SetBool(isAttackingHash, false);
                 animator.SetBool(isRecoveringHash, false);
                 break;
             case EnemyStates.Chasing:
+                animator.SetBool(isChasingHash, true);
                 animator.SetBool(isPatrollingHash, false);
                 animator.SetBool(isIdleHash, false);
-                animator.SetBool(isChasingHash, true);
                 animator.SetBool(isAttackingHash, false);
                 break;
             case EnemyStates.Attacking:
+                animator.SetBool(isAttackingHash, true);
                 animator.SetBool(isPatrollingHash, false);
                 animator.SetBool(isIdleHash, false);
                 animator.SetBool(isChasingHash, false);
-                animator.SetBool(isAttackingHash, true);
                 break;
             case EnemyStates.Recover:
+                animator.SetBool(isRecoveringHash, true);
                 animator.SetBool(isPatrollingHash, false);
                 animator.SetBool(isIdleHash, false);
                 animator.SetBool(isChasingHash, false);
                 animator.SetBool(isAttackingHash, false);
-                animator.SetBool(isRecoveringHash, true);
                 break;
         }
 
@@ -257,20 +271,20 @@ public class EnemyAI : MonoBehaviour
         }
 
     }
-	bool RandomPoint(Vector3 center, float range, out Vector3 result)
-	{
-		for (int i = 0; i < 30; i++)
-		{
-			Vector3 randomPoint = center + Random.insideUnitSphere * range;
-			NavMeshHit hit;
-			if (NavMesh.SamplePosition(randomPoint, out hit, 1.0f, NavMesh.AllAreas))
-			{
-				result = hit.position;
-				return true;
-			}
-		}
-		result = Vector3.zero;
-		return false;
+    bool RandomPoint(Vector3 center, float range, out Vector3 result)
+    {
+        for (int i = 0; i < 30; i++)
+        {
+            Vector3 randomPoint = center + Random.insideUnitSphere * range;
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(randomPoint, out hit, 1.0f, NavMesh.AllAreas))
+            {
+                result = hit.position;
+                return true;
+            }
+        }
+        result = Vector3.zero;
+        return false;
     }
 
     void FinishedRecoverAnimation()

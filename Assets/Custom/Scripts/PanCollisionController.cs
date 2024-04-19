@@ -6,6 +6,7 @@ public class PanCollisionController : MonoBehaviour
 {
     [SerializeField]
     float panDamage = 10.0f;
+    float panKnockbackModifier = 25.0f;
     AudioSource source;
     SimpleEnemy enemy;
     EnemyHealthBar enemyHealthBar;
@@ -27,7 +28,7 @@ public class PanCollisionController : MonoBehaviour
             enemyHealthBar = collision.gameObject.GetComponentInChildren<EnemyHealthBar>();
             enemyHealthBar.UpdateHealthBar(enemy);
             Collider hitCollider = ClosestColliderToPan(collision);
-            hitCollider.gameObject.GetComponent<Rigidbody>().velocity = panRB.velocity;
+            hitCollider.gameObject.GetComponent<Rigidbody>().velocity = panRB.velocity * panKnockbackModifier;
         }
     }
 

@@ -7,17 +7,17 @@ public class SimpleEnemy : MonoBehaviour
     public float health;
     public float maxHealth;
 
-    public float attackSpeed = 3.0f;
-    float nextAttack = 0;
+    public float attackSpeed = 2.0f;
+    public float nextAttack = 0;
     public int strength;
-    bool isDead = false;
+    /*
     PlayerInfo playerInfo;
 
     private void Awake()
     {
         playerInfo = GameObject.FindWithTag("Player").GetComponent<PlayerInfo>();
-    }
-
+    }*/
+/*
     private void OnCollisionEnter(Collision collision)
     {
         if (Time.time > nextAttack && collision.gameObject.CompareTag("Player"))
@@ -28,5 +28,5 @@ public class SimpleEnemy : MonoBehaviour
         }
 
 
-    }
+    }*/
 }

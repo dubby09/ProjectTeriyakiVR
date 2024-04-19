@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public class PlayerHealthManager : MonoBehaviour
 {
     // get information of player from PlayerInfo script
-    public PlayerInfo playerInfo;
+    PlayerInfo playerInfo;
     // variable for the fill of the slider
     public Image fillImage;
     // variable to reference this slider
@@ -16,12 +16,10 @@ public class PlayerHealthManager : MonoBehaviour
     public Text healthText;
 
     // Start is called before the first frame update
-    /*void Awake()
+    void Awake()
     {
-        // store the component of this slider in variable
-        slider = GetComponent<Slider>();
-        healthText = GetComponent<Text>();
-    }*/
+        playerInfo = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerInfo>();
+    }
 
     // Update is called once per frame
     void Update()

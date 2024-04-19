@@ -47,7 +47,6 @@ public class RagdollController : MonoBehaviour
             || collision.gameObject.CompareTag("RangedProjectile"))
         {
             EnableRagdollMode();
-            //simpleEnemy.health -= 10;
             enemyAI.CurrentState = EnemyStates.Ragdoll;
 
             if(simpleEnemy.health <= 0 && !isDead)
@@ -55,7 +54,7 @@ public class RagdollController : MonoBehaviour
                 isDead = true;
                 Debug.Log("Killed enemy!");
                 // Update enemies left
-                GameObject.FindObjectsOfType<EnemiesLeft>()[0].DecreaseCount();
+                FindObjectsOfType<EnemiesLeft>()[0].DecreaseCount();
             }
         }
     }
@@ -72,6 +71,7 @@ public class RagdollController : MonoBehaviour
     void EnableRagdollMode()
     {
         enemyAI.HasRecovered = false;
+        enemyAI.ragdollEndTime = Time.time + enemyAI.maxRagdollTime;
         _ragdollState = true;
         animator.enabled = false;
         agent.enabled = false;

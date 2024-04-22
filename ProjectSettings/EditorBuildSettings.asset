@@ -4,7 +4,10 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Custom/Scenes/DeathScreen.unity
+    guid: 56fe4634a21a6c14999fe1e562fb37aa
   m_configObjects:
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: be19b046c0b2ec44fbf13caecaa5b5a6, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: eab6c1833bfa0384381378e1a7c70bd2, type: 2}

@@ -18,6 +18,9 @@ public class TeriyakiBottle : MonoBehaviour
 
     public float projectileForce = 50f;
 
+    public float maxFireRate = 0.1f;
+    private float fireResetTimer = 0.1f;
+
     private void Awake()
     {
         audioSource = GetComponent<AudioSource>();
@@ -59,11 +62,13 @@ public class TeriyakiBottle : MonoBehaviour
 
     void Update()
     {
+        fireResetTimer -= Time.deltaTime;
+
         bool tempState = false;
         foreach (var device in devicesWithPrimaryButton)
         {
             bool primaryButtonState = false;
-            tempState = device.TryGetFeatureValue(CommonUsages.primaryButton, out primaryButtonState) // did get a value
+            tempState = device.TryGetFeatureValue(CommonUsages.triggerButton, out primaryButtonState) // did get a value
                         && primaryButtonState // the value we got
                         || tempState; // cumulative result from other controllers
         }
@@ -82,11 +87,14 @@ public class TeriyakiBottle : MonoBehaviour
 
     public void FireBottle()
     {
-        Debug.Log("Particles");
-        audioSource.Play();
-        particles.Play();
-        Rigidbody p = Instantiate(projectile, spawnPoint.position, transform.rotation).GetComponent<Rigidbody>();
-        p.AddForce(transform.forward * projectileForce);
+        if(fireResetTimer < 0f)
+        {
+            audioSource.Play();
+            particles.Play();
+            Rigidbody p = Instantiate(projectile, spawnPoint.position, transform.rotation).GetComponent<Rigidbody>();
+            p.AddForce(transform.forward * projectileForce);
 
+            fireResetTimer = maxFireRate;
+        }
     }
 }

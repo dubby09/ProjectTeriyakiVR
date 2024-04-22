@@ -24,9 +24,7 @@ public class PanCollisionController : MonoBehaviour
         {
             source.Play();
             enemy = collision.gameObject.GetComponent<SimpleEnemy>();
-            enemy.health -= panDamage;
-            enemyHealthBar = collision.gameObject.GetComponentInChildren<EnemyHealthBar>();
-            enemyHealthBar.UpdateHealthBar(enemy);
+            enemy.TakeDamage(panDamage);
             Collider hitCollider = ClosestColliderToPan(collision);
             hitCollider.gameObject.GetComponent<Rigidbody>().velocity = panRB.velocity * panKnockbackModifier;
         }

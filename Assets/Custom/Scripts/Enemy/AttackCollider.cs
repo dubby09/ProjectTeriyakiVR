@@ -9,6 +9,7 @@ public class AttackCollider : MonoBehaviour
     // so that all the different attack colliders would behave properly to their enemy
     // type, but this isn't so lole
     SimpleEnemy enemyInfo;
+    public AudioSource source;
 
     private void Awake()
     {
@@ -20,9 +21,16 @@ public class AttackCollider : MonoBehaviour
     {
         if (Time.time > enemyInfo.nextAttack && other.gameObject.CompareTag("Player"))
         {
+            source.Play();
+
             enemyInfo.nextAttack = Time.time + enemyInfo.attackSpeed;
 
             playerInfo.playerHealth -= enemyInfo.strength;
+
+            if (playerInfo.playerHealth <= 0)
+            {
+                FindObjectOfType<GameManager>().DeathScreen();
+            }
         }
     }
 }

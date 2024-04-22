@@ -12,7 +12,6 @@ public class RagdollController : MonoBehaviour
     EnemyAI enemyAI;
     NavMeshAgent agent;
     SimpleEnemy simpleEnemy;
-    bool isDead = false;
 
     // Start is called before the first frame update
     void Start()
@@ -43,18 +42,18 @@ public class RagdollController : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        bool isRanged = collision.gameObject.CompareTag("RangedProjectile");
+
         if (collision.gameObject.CompareTag("MeleeWeapon")
-            || collision.gameObject.CompareTag("RangedProjectile"))
+            || isRanged)
         {
             EnableRagdollMode();
             enemyAI.CurrentState = EnemyStates.Ragdoll;
 
-            if(simpleEnemy.health <= 0 && !isDead)
+            // Add projectile damage
+            if(isRanged)
             {
-                isDead = true;
-                Debug.Log("Killed enemy!");
-                // Update enemies left
-                FindObjectsOfType<EnemiesLeft>()[0].DecreaseCount();
+                simpleEnemy.TakeDamage(10);
             }
         }
     }

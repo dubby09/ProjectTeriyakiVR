@@ -106,10 +106,10 @@ NavMeshSettings:
   m_BuildSettings:
     serializedVersion: 2
     agentTypeID: 0
-    agentRadius: 0.5
+    agentRadius: 0.43
     agentHeight: 2
     agentSlope: 29
-    agentClimb: 0.4
+    agentClimb: 0.42
     ledgeDropHeight: 0
     maxJumpAcrossDistance: 0
     minRegionArea: 39967
@@ -60127,17 +60127,9 @@ PrefabInstance:
       value: Enemy 2
       objectReference: {fileID: 0}
     - target: {fileID: 6215525184172624203, guid: 5535d55ee28d8444eb9036c4060965a8, type: 3}
-      propertyPath: agent
-      value: 
-      objectReference: {fileID: 1626174022}
-    - target: {fileID: 6215525184172624203, guid: 5535d55ee28d8444eb9036c4060965a8, type: 3}
       propertyPath: player
       value: 
       objectReference: {fileID: 107308449}
-    - target: {fileID: 6215525184172624203, guid: 5535d55ee28d8444eb9036c4060965a8, type: 3}
-      propertyPath: animator
-      value: 
-      objectReference: {fileID: 1626174027}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5535d55ee28d8444eb9036c4060965a8, type: 3}
 --- !u!1001 &1047574466
@@ -75153,16 +75145,6 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 6526184997810210037, guid: aec71fa5d6ab24744bbfb3afb66de766, type: 3}
   m_PrefabInstance: {fileID: 1289491692}
-  m_PrefabAsset: {fileID: 0}
---- !u!195 &1626174022 stripped
-NavMeshAgent:
-  m_CorrespondingSourceObject: {fileID: 5054413886895361311, guid: 5535d55ee28d8444eb9036c4060965a8, type: 3}
-  m_PrefabInstance: {fileID: 1047229480}
-  m_PrefabAsset: {fileID: 0}
---- !u!95 &1626174027 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5027521502863373569, guid: 5535d55ee28d8444eb9036c4060965a8, type: 3}
-  m_PrefabInstance: {fileID: 1047229480}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1629124990
 PrefabInstance:
@@ -92076,7 +92058,7 @@ PrefabInstance:
     - target: {fileID: 4911001208702791727, guid: bc54288df1810904a8496ad7cb291949, type: 3}
       propertyPath: m_InteractionManager
       value: 
-      objectReference: {fileID: 1210574154}
+      objectReference: {fileID: 0}
     - target: {fileID: 5252895110953788187, guid: bc54288df1810904a8496ad7cb291949, type: 3}
       propertyPath: m_Name
       value: TeriyakiBottle

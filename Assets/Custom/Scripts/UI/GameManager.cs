@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -27,6 +28,11 @@ public class GameManager : MonoBehaviour
         questUI.CloseBox();
 
         // TODO: Space to advance dialog
+    }
+
+    public void DeathScreen()
+    {
+        SceneManager.LoadScene("DeathScreen", LoadSceneMode.Single);
     }
 
     // Update is called once per frame

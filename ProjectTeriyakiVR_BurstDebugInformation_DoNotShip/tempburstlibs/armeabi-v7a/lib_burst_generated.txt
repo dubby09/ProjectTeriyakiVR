@@ -140,6 +140,8 @@ Library: C:\Users\RFID VR\Documents\GitHub\ProjectTeriyakiVR2\Temp\StagingArea\t
 --compilation-defines=MODULE_PHYSICS_EXISTS
 --compilation-defines=MODULE_PHYSICS_2D_EXISTS
 --compilation-defines=MODULE_PARTICLE_SYSTEM_EXISTS
+--compilation-defines=UNITY_INPUT_SYSTEM
+--compilation-defines=XR_MGMT_GTE_320
 --compilation-defines=INPUT_SYSTEM_1_4_OR_NEWER
 --compilation-defines=INPUT_SYSTEM_1_1_OR_NEWER
 --compilation-defines=ANIMATION_MODULE_PRESENT
@@ -161,8 +163,6 @@ Library: C:\Users\RFID VR\Documents\GitHub\ProjectTeriyakiVR2\Temp\StagingArea\t
 --compilation-defines=UNITY_ANALYTICS
 --compilation-defines=INPUT_SYSTEM_POSE_VALID
 --compilation-defines=TIMELINE_FRAMEACCURATE
---compilation-defines=UNITY_INPUT_SYSTEM
---compilation-defines=XR_MGMT_GTE_320
 --generate-link-xml=Temp\burst.link.xml
 --temp-folder=C:\Users\RFID VR\Documents\GitHub\ProjectTeriyakiVR2\Temp\Burst
 --output=C:\Users\RFID VR\Documents\GitHub\ProjectTeriyakiVR2\Temp\StagingArea\tempburstlibs\armeabi-v7a\lib_burst_generated
